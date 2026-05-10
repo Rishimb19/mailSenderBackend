@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  googleId  String?  @unique
+  picture   String?
+  
+  // For Gmail Send
+  gmailAccessToken  String?
+  gmailRefreshToken String?
+  gmailTokenExpiry  DateTime?
+  
+  templates Template[]
+  campaigns Campaign[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Template {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String?
+  subject   String
+  fromName  String?
+  body      String?
+  bodyText  String?
+  bodyHtml  String?
+  tone      String?
+  keywords  String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  subject     String
+  fromName    String?
+  tone        String?
+  bodyHtml    String?
+  bodyText    String?
+  recipients  String?  // Store recipients as JSON string
+  status      String   @default("draft")
+  totalRecipients Int  @default(0)
+  sentCount   Int      @default(0)
+  failedCount Int      @default(0)
+  invalidCount Int     @default(0)
+  
+  // Scheduling fields
+  scheduledFor     DateTime?  // When to send the campaign
+  isRecurring      Boolean    @default(false)  // Whether this is recurring
+  recurringPattern String?    // daily, weekly, monthly
+  lastSentAt       DateTime?  // Last time this campaign was sent
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  completedAt DateTime?
+}
